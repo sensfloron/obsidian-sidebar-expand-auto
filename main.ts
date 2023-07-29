@@ -1,5 +1,6 @@
 import { log } from 'console';
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { createDiffieHellmanGroup } from 'crypto';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, WorkspaceLeaf } from 'obsidian';
 import { env } from 'process';
 
 // Remember to rename these classes and interfaces!
@@ -15,56 +16,67 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 }
 const ExpandAutoStatus = {
 	leftIsAutoOpen: false,
-	rightIsAutoOpen: false
+	rightIsAutoOpen: false,
 }
 
 export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings;
 
+
 	async onload() {
 		await this.loadSettings();
-
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SampleSettingTab(this.app, this));
 
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'mousemove', (evt: MouseEvent) => {
-			// console.log('mousemove', evt.pageX);
-			let x = evt.pageX;
-			let leftBorder = 40;
-			let leftSidebarWidth = 334;
-			let rightBorder = 1480;
+		this.registerDomEvent(document, 'mousemove', this.throttledMouseMoveHandler);
 
-			if (x < leftBorder) {
-				console.log('左侧展开')
-				// TODO 将侧边栏展开
-				ExpandAutoStatus.leftIsAutoOpen = true;
-			}
-			if (x > leftSidebarWidth && ExpandAutoStatus.leftIsAutoOpen) {
-				// TODO 将侧边栏收起
-				console.log('左侧收起')
-				ExpandAutoStatus.leftIsAutoOpen = false;
-			}
-			if (x > rightBorder) {
-				console.log('右侧展开')
-				ExpandAutoStatus.leftIsAutoOpen = true;
-			}
-			if (x > leftSidebarWidth && ExpandAutoStatus.leftIsAutoOpen) {
-				// TODO 将侧边栏收起
-				console.log('右侧收起')
-				ExpandAutoStatus.leftIsAutoOpen = false;
-			}
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 	}
 
 	onunload() {
 
 	}
+	getFileViewWidth(): any {
+		// 获取当前的 WorkspaceLeaf 对象，它表示当前的视图
+		const leaf = this.app.workspace.getLeaf();
+
+	}
+
+	throttledMouseMoveHandler = throttle((evt: MouseEvent) => {
+		
+		let x = evt.pageX;
+		let y = evt.pageY;
+		let topBorder = 40;
+		let leftBorder = 40;
+		let leftSidebarWidth = 334;
+		let rightBorder = 2040;
+		let rightSidebarWidth = 334;
+		console.log(evt.pageX);
+		if (y > topBorder) {
+			if (x < leftBorder && !ExpandAutoStatus.leftIsAutoOpen) {
+				// 鼠标x小于40了，并且还未自动展开
+				this.app.workspace.leftSplit.toggle()
+				ExpandAutoStatus.leftIsAutoOpen = true;
+			}
+			else if (x > leftSidebarWidth && ExpandAutoStatus.leftIsAutoOpen) {
+				// 鼠标大于334了，此时正在自动展开
+				this.app.workspace.leftSplit.toggle();
+				ExpandAutoStatus.leftIsAutoOpen = false;
+			}
+			else if (x > rightBorder && !ExpandAutoStatus.rightIsAutoOpen) {
+				// 鼠标到达最右侧
+				this.app.workspace.rightSplit.toggle();
+				ExpandAutoStatus.rightIsAutoOpen = true;
+			}
+			else if (x < rightBorder-rightSidebarWidth && ExpandAutoStatus.rightIsAutoOpen) {
+				// 鼠标到达离最右侧差一个面板的距离
+				this.app.workspace.rightSplit.toggle();
+				ExpandAutoStatus.rightIsAutoOpen = false;
+			}
+		}
+	}, 10);
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -73,6 +85,7 @@ export default class MyPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+
 }
 
 function throttle<T extends (...args: any[]) => void>(callback: T, delay: number): T {
@@ -88,22 +101,6 @@ function throttle<T extends (...args: any[]) => void>(callback: T, delay: number
 	} as T;
 }
 
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
-	}
-}
 
 class SampleSettingTab extends PluginSettingTab {
 	plugin: MyPlugin;
@@ -141,3 +138,24 @@ class SampleSettingTab extends PluginSettingTab {
 		// 	}));
 	}
 }
+
+/**
+ * 
+ * @param direction 左边是 true，右边是false
+ * @returns 
+ */
+// function getFileViewWidth(direction: boolean): any {
+// 	let n = (direction) ? 'left' : 'right';
+// 	// 获取当前的 WorkspaceLeaf 对象，它表示当前的视图
+// 	const activeLeaf = this.app.workspace.activeLeaf;
+
+// 	// 判断当前视图是否是左侧边栏
+// 	if (activeLeaf && activeLeaf.getContainer() === n) {
+// 		// 获取左侧边栏的 DOM 元素
+// 		const leftSidebarEl = activeLeaf.view.containerEl;
+
+// 		// 获取左侧边栏的离左边缘的 X 坐标
+// 		const leftX = leftSidebarEl.getBoundingClientRect().left;
+// 		return leftX;
+// 	}
+// }
