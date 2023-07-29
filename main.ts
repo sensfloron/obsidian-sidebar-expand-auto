@@ -55,7 +55,7 @@ export default class MyPlugin extends Plugin {
 		// 左侧收起坐标
 		let leftSidebar = 550;
 		// 右侧收起坐标
-		let rightSidebar = 1600;
+		let rightSidebar = 1660;
 
 
 		console.log(evt.pageX, evt.pageY);
