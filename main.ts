@@ -45,33 +45,42 @@ export default class MyPlugin extends Plugin {
 	}
 
 	throttledMouseMoveHandler = throttle((evt: MouseEvent) => {
-		
+
 		let x = evt.pageX;
 		let y = evt.pageY;
+
 		let topBorder = 40;
 		let leftBorder = 40;
-		let leftSidebarWidth = 334;
-		let rightBorder = 2040;
-		let rightSidebarWidth = 334;
-		console.log(evt.pageX);
+		let rightBorder = 1940;
+		// 左侧收起坐标
+		let leftSidebar = 550;
+		// 右侧收起坐标
+		let rightSidebar = 1600;
+
+
+		console.log(evt.pageX, evt.pageY);
 		if (y > topBorder) {
 			if (x < leftBorder && !ExpandAutoStatus.leftIsAutoOpen) {
-				// 鼠标x小于40了，并且还未自动展开
+				// 鼠标x小于40了，未自动展开
 				this.app.workspace.leftSplit.toggle()
 				ExpandAutoStatus.leftIsAutoOpen = true;
 			}
-			else if (x > leftSidebarWidth && ExpandAutoStatus.leftIsAutoOpen) {
-				// 鼠标大于334了，此时正在自动展开
+			else if (x > leftSidebar && ExpandAutoStatus.leftIsAutoOpen) {
+				// 鼠标处于收起坐标且正在自动展开， 收起面板
 				this.app.workspace.leftSplit.toggle();
 				ExpandAutoStatus.leftIsAutoOpen = false;
 			}
-			else if (x > rightBorder && !ExpandAutoStatus.rightIsAutoOpen) {
-				// 鼠标到达最右侧
+		}
+		if (y < topBorder) {
+			if (x > rightBorder && !ExpandAutoStatus.rightIsAutoOpen) {
+				// 鼠标到达最右侧未自动展开，且在顶栏
+				console.log('右侧展开')
 				this.app.workspace.rightSplit.toggle();
 				ExpandAutoStatus.rightIsAutoOpen = true;
 			}
-			else if (x < rightBorder-rightSidebarWidth && ExpandAutoStatus.rightIsAutoOpen) {
-				// 鼠标到达离最右侧差一个面板的距离
+			else if (x < rightSidebar && ExpandAutoStatus.rightIsAutoOpen) {
+				// 鼠标处于收起坐标正在自动展开且在顶栏 收起面板
+				console.log('右侧收起')
 				this.app.workspace.rightSplit.toggle();
 				ExpandAutoStatus.rightIsAutoOpen = false;
 			}
@@ -140,9 +149,9 @@ class SampleSettingTab extends PluginSettingTab {
 }
 
 /**
- * 
+ *
  * @param direction 左边是 true，右边是false
- * @returns 
+ * @returns
  */
 // function getFileViewWidth(direction: boolean): any {
 // 	let n = (direction) ? 'left' : 'right';
